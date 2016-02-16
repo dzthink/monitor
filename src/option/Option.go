@@ -18,7 +18,7 @@ func NewOption(path string) (*Option, error) {
 	option := Option{
 		HttpTimeInterval:5,
 	}
-	
+
 	//读取文件
 	fmt.Println(path)
 	fhandle, err := os.Open(path)
@@ -39,5 +39,23 @@ func NewOption(path string) (*Option, error) {
 
 
 func(op *Option) parseLine(line string) {
-	
+	nameValue := strings.Split(line, "=")
+	if len(nameValue) != 2 {
+		//todo logs
+		return;
+	}
+	setter := "set" + nameValue[0]
+	opValue := reflect.ValueOf(op)
+	if opSetter := opValue.MethodByName(setter);opSetter != nil {
+		param := make([]reflect.Value, 2)
+		param[0] = reflect.Value(nameValue[0])
+		param[1] = reflect.Value(nameValue[1])
+		opSetter.Call(param)
+	} else {
+
+	}
+}
+
+func(op *Option) searchOption(name string)(*reflect.Value, error) {
+	fieldNum := 
 }
