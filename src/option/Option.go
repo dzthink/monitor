@@ -1,6 +1,9 @@
 package option
 
 import (
+	"strconv"
+	"errors"
+	"reflect"
 	"strings"
 	"fmt"
 	"io"
@@ -9,8 +12,8 @@ import (
 )
 
 type Option struct{
-	HttpTimeInterval int32 "httpTimeInterval"
-	HttpUrlList []string "http.url"
+	HttpTimeInterval int "httpTimeInterval"
+	HttpUrlList []string "httpUrl"
 }
 
 func NewOption(path string) (*Option, error) {
@@ -20,7 +23,6 @@ func NewOption(path string) (*Option, error) {
 	}
 
 	//读取文件
-	fmt.Println(path)
 	fhandle, err := os.Open(path)
 	if nil != err {
 		return &option, err
@@ -37,25 +39,54 @@ func NewOption(path string) (*Option, error) {
 	return &option, nil
 }
 
+func (op *Option) SetHttpTimeInterval(value string) error{
+	interval, err := strconv.Atoi(value)
+	if err != nil {
+		//todo 参数值错误
+		return err
+	}
+	op.HttpTimeInterval = interval
+	return nil
+}
+
+func (op *Option) SetHttpUrl(value string) error{
+	op.HttpUrlList = append(op.HttpUrlList, value)
+	return nil
+}
 
 func(op *Option) parseLine(line string) {
-	nameValue := strings.Split(line, "=")
-	if len(nameValue) != 2 {
+	confNameValue := strings.Split(line, "=")
+	if len(confNameValue) != 2 {
 		//todo logs
+		fmt.Println("配置格式错误!")
 		return;
 	}
-	setter := "set" + nameValue[0]
-	opValue := reflect.ValueOf(op)
-	if opSetter := opValue.MethodByName(setter);opSetter != nil {
-		param := make([]reflect.Value, 2)
-		param[0] = reflect.Value(nameValue[0])
-		param[1] = reflect.Value(nameValue[1])
-		opSetter.Call(param)
-	} else {
+	confName := strings.TrimSpace(confNameValue[0])
+	confVal := strings.TrimSpace(confNameValue[1])
+	setter := "Set" + strings.Title(confName)
 
+	opValue := reflect.ValueOf(op)
+	if opSetter := opValue.MethodByName(setter);opSetter.IsValid() {//找到setter方法
+		param := make([]reflect.Value, 1)
+		param[0] = reflect.ValueOf(confVal)
+		opSetter.Call(param)
+	} else if fieldIndex, err := op.searchOption(confName); err == nil {//找到同名tag属性
+		//未处理的panic
+		opValue.Elem().Field(fieldIndex).SetString(confVal)
+	} else {//不支持的配置
+		//todo logs	
+		fmt.Println("配置不支持")
 	}
 }
 
-func(op *Option) searchOption(name string)(*reflect.Value, error) {
-	fieldNum := 
+func(op *Option)searchOption(name string)(int, error){
+	fmt.Println(name)
+	opValue := reflect.TypeOf(op).Elem()
+	fieldNum := opValue.NumField()
+	for i := 0; i < fieldNum; i++ {
+		if strings.EqualFold(string(opValue.Field(i).Tag), name) {
+			return i, nil
+		}
+	}
+	return -1, errors.New("field for config:" + name + " not found!")
 }

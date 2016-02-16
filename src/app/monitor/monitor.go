@@ -15,10 +15,6 @@ func main() {
 		//todo logs
 		os.Exit(1)
 	}
-	fmt.Println(option.HttpTimeInterval)
-	//解析配置文件
-	
-	//启动报警模块
 	
 	//启动http监控
 }
