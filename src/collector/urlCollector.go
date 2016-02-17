@@ -1,43 +1,51 @@
-package monitor
+package collector
+
 
 import(
 	"option"
 	"data"
 	"time"
-	"http"
+	"fmt"
+	"net/http"
 )
 type UrlCollector struct {
 	urls []string
 	timer *time.Ticker
+	stg *data.Storage
 }
 
-func NewUrlCollector(option *option.Option) *UrlCollector{
+func NewUrlCollector(stg *data.Storage, option *option.Option) *UrlCollector{
 	urlCollector := &UrlCollector{
-		timer:time.NewTicker(option.HttpTimeInterval*time.Second),
-		urls:option.HttpUrlList
-
+		timer:time.NewTicker(time.Duration(option.HttpTimeInterval)*time.Second),
+		urls:option.HttpUrlList,
+		stg:stg,
 	}
-	return &urlCollector
+	return urlCollector
 }
-func(collector *UrlCollector) Collect(stg *data.Storage) {
+func(collector *UrlCollector) Collect() {
 	for {
 		select {
 		case <-collector.timer.C:
-			go collector.detectUrl(stg)
+			collector.detectUrl()
 		}
 	}
 }
 
-func(collector *UrlCollector)detectUrl(stg *data.Storage) {
+func(collector *UrlCollector)detectUrl() {
 	for i := 0; i < len(collector.urls); i++ {
-
+		url := collector.urls[i]
+		health, latency := collector.getUrlStatus(url)
+		urlHealth := data.UrlHealth{Health:health,Latency:latency}
+		collector.stg.RefreshUrlStatus(url, urlHealth)
 	}
 }
 
-func (collector *UrlCollector)getUrlStatus(url string) (bool,int32){
-	timebegin := time.Now().Unix()
+func (collector *UrlCollector)getUrlStatus(url string) (bool,int64){
+	fmt.Println(url)
+
+	timebegin := time.Now().UnixNano()
 	resp, err := http.Get(url)
-	timeConsume := time.Now().Unix() - timebegin
+	timeConsume := (time.Now().UnixNano() - timebegin)/1000000
 	if err != nil {
 		return false,timeConsume
 	}
@@ -45,6 +53,6 @@ func (collector *UrlCollector)getUrlStatus(url string) (bool,int32){
 	if resp.StatusCode != http.StatusOK {
 		return false, timeConsume
 	}
-
+	fmt.Println(url + ":" + fmt.Sprintf("%d", timeConsume))
 	return true, timeConsume
 }

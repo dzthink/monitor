@@ -1,9 +1,20 @@
 package data
 
-type Storage struct {
-    urlStatus map[string]int32
+type UrlHealth struct {
+	Health bool
+	Latency int64
 }
 
-func(stg *Storage)RefreshUrlStatus(url string, status int32) {
-    stg.urlStatus[url] = status
+type Storage struct {
+    urlStatus map[string]UrlHealth
+}
+
+func NewStorage() *Storage{
+	stg := &Storage{
+		urlStatus : make(map[string]UrlHealth),
+	}
+	return stg
+}
+func(stg *Storage)RefreshUrlStatus(url string, urlHealth UrlHealth) {
+    stg.urlStatus[url] = urlHealth
 }
