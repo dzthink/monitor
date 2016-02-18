@@ -9,11 +9,15 @@ import (
 	"io"
 	"bufio"
 	"os"
+	"util"
 )
 
 type Option struct{
 	HttpTimeInterval int "httpTimeInterval"
 	HttpUrlList []string "httpUrl"
+	HttpPubServerAddr string "httpPubServerAddr"
+	HttpPriServerAddr string "httpPriServerAddr"
+	Log *util.LOG	
 }
 
 func NewOption(path string) (*Option, error) {
@@ -21,7 +25,7 @@ func NewOption(path string) (*Option, error) {
 	option := Option{
 		HttpTimeInterval:5,
 	}
-
+	
 	//读取文件
 	fhandle, err := os.Open(path)
 	if nil != err {
@@ -55,6 +59,7 @@ func (op *Option) SetHttpUrl(value string) error{
 }
 
 func(op *Option) parseLine(line string) {
+	//todo 过滤空格过滤注释行
 	confNameValue := strings.Split(line, "=")
 	if len(confNameValue) != 2 {
 		//todo logs
@@ -80,7 +85,6 @@ func(op *Option) parseLine(line string) {
 }
 
 func(op *Option)searchOption(name string)(int, error){
-	fmt.Println(name)
 	opValue := reflect.TypeOf(op).Elem()
 	fieldNum := opValue.NumField()
 	for i := 0; i < fieldNum; i++ {

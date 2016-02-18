@@ -1,29 +1,45 @@
 package web
 
+import (
+	"fmt"
+)
+
 import(
     "data"
     "net/http"
+	"util"
+	"option"
 )
-type ApiServer struct {
+type ApiService struct {
     stg *data.Storage
-    server *http.Server
+	Log *util.LOG
 }
 
-func NewApiServer(option *option.Option, stg *data.Storage) *ApiServer {
-
+func NewApiService(stg *data.Storage, option *option.Option) *ApiService {
+	return &ApiService{
+		stg:stg,
+		Log:option.Log,
+	}
 }
 
-func(apiServer *ApiServer)Serve() {
 
+func(apiService *ApiService)Route(httpServer *HttpServer) {
+	//输出url健康状态
+    httpServer.PriRoute("/health/url", func(w http.ResponseWriter, r *http.Request) {
+		apiService.urlHealth(w, r)
+    })
 }
 
-func(apiServer *ApiServer)route() map[string]func() {
-    route := make(map[string]func())
-    route["/health/url"] = func(w http.ResponseWriter, r *http.Request) {
 
-    }
-}
-
-func(apiServer *ApiServer)urlHealth(w http.ResponseWriter, r *http.Request) {
-    
+func(apiService *ApiService)urlHealth(w http.ResponseWriter, r *http.Request) {
+   	urlStatus := apiService.stg.GetUrlStatus()
+	output := ""	
+	for key, value := range urlStatus {
+		okStr := "fail"
+		if value.Health {
+			okStr = "ok"
+		}
+		output += key + " " + okStr + " " + fmt.Sprintf("%d", value.Latency) + "\n"
+	}
+	w.Write([]byte(output))
 }

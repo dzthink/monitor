@@ -18,3 +18,7 @@ func NewStorage() *Storage{
 func(stg *Storage)RefreshUrlStatus(url string, urlHealth UrlHealth) {
     stg.urlStatus[url] = urlHealth
 }
+
+func(stg *Storage)GetUrlStatus() map[string]UrlHealth{
+	return stg.urlStatus
+}
