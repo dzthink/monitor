@@ -18,7 +18,7 @@ func main() {
 		//todo logs
 		os.Exit(1)
 	}
-	
+
 	stg := data.NewStorage()
 	//启动url监控
 	colt := collector.NewUrlCollector(stg, option)
@@ -29,6 +29,8 @@ func main() {
 		colt.Collect()
 
 	}()
+	／／启动http服务
+
 	w.Wait()
 	//启动http服务
 }
